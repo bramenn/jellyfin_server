@@ -42,7 +42,7 @@ services:
       - TZ=Etc/UTC
       - JELLYFIN_PublishedServerUrl=https://jellyfin.bramen.org
     volumes:
-      - ./path/to/jellyfin/library:/config
+      - ./mnt-mega/jellyfin/library:/config
       - ./mnt-mega/jellyfin/series:/data/series
       - ./mnt-mega/jellyfin/animes:/data/animes
       - ./mnt-mega/jellyfin/peliculas:/data/peliculas
