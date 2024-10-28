@@ -1,0 +1,66 @@
+---
+services:
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    env_file: tunnel.env
+    restart: always
+    container_name: tunnel
+    volumes:
+      - ./cloudflared:/etc/cloudflare
+    networks:
+      - tunnelnet
+
+  rclone:
+    container_name: rclone
+    image: rclone/rclone
+    restart: always
+    network_mode: "bridge"
+    volumes:
+      - /root/.config/rclone/:/root/.config/rclone
+      - ./mnt-mega:/data:shared
+    devices:
+      - /dev/fuse
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+        #command: "mount mega-1: /data --uid=1000 --gid=1000 --cache-dir=/cache --use-mmap --allow-other --allow-non-empty --umask=002 --rc --rc-no-auth"
+    command: "mount mega-1: /data --uid=1000 --gid=1000 --cache-dir=/cache --allow-other --dir-perms 0777 --file-perms 0777  --vfs-cache-mode full --allow-non-empty"
+    environment:
+      PUID: 1000
+      PGID: 1000
+      RCLONE_REMOTE_PATH: "mega-1:jellyfin"
+
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - JELLYFIN_PublishedServerUrl=https://jellyfin.bramen.org
+    volumes:
+      - ./path/to/jellyfin/library:/config
+      - ./mnt-mega/jellyfin/series:/data/series
+      - ./mnt-mega/jellyfin/animes:/data/animes
+      - ./mnt-mega/jellyfin/peliculas:/data/peliculas
+      - ./mnt-mega/jellyfin/documentales:/data/documentales
+      - ./mnt-mega/jellyfin/descargas:/data/descargas
+    ports:
+      - 8096:8096
+        #- 8920:8920 #optional
+        #- 7359:7359/udp #optional
+        #- 1900:1900/udp #optional
+    restart: unless-stopped
+    depends_on:
+      - tunnel
+      - rclone
+
+    networks:
+      - tunnelnet
+
+networks:
+  tunnelnet:
+    external: true
