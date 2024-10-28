@@ -1,2 +1,6 @@
 mnt-mega/
 tunnel.env
+log/
+cache/
+.cache/
+.aspnet/
